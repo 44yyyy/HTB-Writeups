@@ -40,6 +40,18 @@ Now, let's navigate to ```http://10.129.61.28:80``` to see what kind of applicat
 
 Firefox tells us that it can't find the site. Let's add the url ```searcher.htb``` to our ```/etc/hosts``` file on our attack box and try again.
 
-Now we see the website displayed on our browser. Navigating to the bottom, we also see that the website is powered by Searchor 2.4.0.
+![1](Screenshots/Busqueda_1.jpg)
+
+![2](Screenshots/Busqueda_2.jpg)
+
+Now we see the website displayed on our browser. Navigating to the bottom, we also see that the website is powered by Flask and Searchor 2.4.0.
+
+![3](Screenshots/Busqueda_3.jpg)
+
+Since we have the version number of Searchor conveniently displayed for us, I looked for publicly listed vulnerabilities for Searchor 2.4.0. It turns out that Searchor 2.4.0 contains a critical arbitrary code execution vulnerability tracked as CVE-2023-43364, caused by a usage of Python's insecure function ```eval()``` to handle user input in ```src/searchor/main.py```. This vulnerability can be used to escape the string context and inject malicious code to be ran on the target system.
+
+Let's intercept a request sent from us to the website and look at it closer. My instincts tell me that we can manipulate the 'query' paramter in the POST request. 
+
+
 
 
