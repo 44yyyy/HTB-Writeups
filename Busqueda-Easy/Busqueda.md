@@ -74,7 +74,7 @@ Running ```ls -la``` again in the ```.git``` directory immediately gets us some 
 
 ![9](Screenshots/Busqueda_9.jpg)
 
-Looking into the contents of the ```config``` file, two things stand out. A set of credentials are revealed, and a new subdomain: ```gitea.searcher.htb```, which we should immediately add to ```/etc/hosts```.
+Looking into the contents of the ```config``` file, two things stand out. A set of credentials are revealed, and a new subdomain: ```gitea.searcher.htb```, which we should immediately add to ```/etc/hosts``` on our attack box.
 
 ![10](Screenshots/Busqueda_10.jpg)
 
