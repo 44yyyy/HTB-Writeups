@@ -74,9 +74,26 @@ Running ```ls -la``` again in the ```.git``` directory immediately gets us some 
 
 ![9](Screenshots/Busqueda_9.jpg)
 
-Looking into the contents of the ```config``` file, two things stand out. A set of credentials are revealed, and a new subdomain: ```gitea.searcher.htb```, which we should immediately add to ```/etc/hosts``` on our attack box.
+Looking into the contents of the ```config``` file, two things stand out. A set of credentials are revealed, and a new virtual host: ```gitea.searcher.htb```, which we should immediately add to ```/etc/hosts``` on our attack box.
 
 ![10](Screenshots/Busqueda_10.jpg)
+
+![11](Screenshots/Busqueda_11.jpg)
+
+Let's navigate to the new url and log in with the new credentials we just found. After logging in, there was not anything particularly notable or useful to us at the moment, except for the fact that there was an ```administrator``` user we can maybe log into with a new set of credentials.
+
+![12](Screenshots/Busqueda_12.jpg)
+
+Returning back to enumerating the target machine, I ran ```sudo -l``` to check what the ```svc``` user could run as ```root```. It prompts us for a password, maybe we can use the password we found earlier for the ```svc``` user?
+
+![13](Screenshots/Busqueda_13.jpg)
+
+It works! The password we found for the gitea account is also the password for the ```svc``` user on the target machine. We see something interesting in the output. We can run a python script with a random parameter as root.
+
+![14](Screenshots/Busqueda_14.jpg)
+
+
+
 
 
 
