@@ -56,7 +56,13 @@ Let's intercept a request sent from us to the website and look at it closer. My 
 
 I could've continued with manual exploitation of the vulnerability, but looking online, I found a [PoC](https://github.com/nikn0laty/Exploit-for-Searchor-2.4.0-Arbitrary-CMD-Injection) for CVE-2023-43364. I downloaded the exploit, ran it, and got a reverse shell back as the ```svc``` user.
 
-Navigating to the home directory for this user, we can get the user flag.
+![5](Screenshots/Busqueda_5.jpg)
+
+![6](Screenshots/Busqueda_6.jpg)
+
+Navigating to the home directory for this user, we can get the user flag. Nice!
+
+![7](Screenshots/Busqueda_7.jpg)
 
 ## Root Flag
 
