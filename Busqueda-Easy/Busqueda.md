@@ -84,13 +84,53 @@ Let's navigate to the new url and log in with the new credentials we just found.
 
 ![12](Screenshots/Busqueda_12.jpg)
 
-Returning back to enumerating the target machine, I ran ```sudo -l``` to check what the ```svc``` user could run as ```root```. It prompts us for a password, maybe we can use the password we found earlier for the ```svc``` user?
+Returning back to enumerating the target machine for potential privilege escalation vectors, I ran ```sudo -l``` to check what the ```svc``` user could run as ```root```. It prompts us for a password, maybe we can use the password we found earlier for the ```svc``` user?
 
 ![13](Screenshots/Busqueda_13.jpg)
 
-It works! The password we found for the gitea account is also the password for the ```svc``` user on the target machine. We see something interesting in the output. We can run a python script with a random parameter as root.
+It works! The password we found for the Gitea account is also the password for the ```svc``` user on the target machine. We see something interesting in the output. We can run a python script with a random parameter as ```root```.
 
 ![14](Screenshots/Busqueda_14.jpg)
+
+Before continuing further, I decided to try logging in as the ```svc``` user through ssh with our previously used password for a more stable shell connection. It worked!
+
+![15](Screenshots/Busqueda_15.jpg)
+
+Returning back to ```/opt/scripts/system-checkup.py```, we see that our current user does not have read or write permissions over the file, only execute. So let's execute it using ```sudo``` and see what happens.
+
+![16](Screenshots/Busqueda_16.jpg)
+
+![17](Screenshots/Busqueda_17.jpg)
+
+We get three different options we can use to properly run the script. Let's try all of them.
+
+The first option, ```docker-ps```, simply displays running docker containers. We see two containers, ```gitea``` and ```mysql_db```.
+
+![18](Screenshots/Busqueda_18.jpg)
+
+Moving onto the second option, ```docker-inspect``` gives us extra arguments to run the script with for this option. 
+
+![19](Screenshots/Busqueda_19.jpg)
+
+Let's inspect one of the containers we saw on the output of ```docker-ps```. ```mysql_db``` seems interesting, but since we know there is Gitea being hosted on the target machine, let's go with the ```gitea``` container. For the format argument, a quick search online tells us that we can use ```'{{json .}}'``` to get all data that can be printed. 
+
+And they weren't lying about all data, there is a lot in this output. Maybe I should've used a different format argument.
+
+![20](Screenshots/Busqueda_20.jpg)
+
+Nonetheless, looking at the output, we find what we need: ```"GITEA__database__PASSWD=yuiu1hoiu4i5ho1uh"```.
+
+My instincts tell me that this could be the password for the ```administrator``` user we saw earlier in the Gitea instance, so let's try logging in.
+
+Nice!
+
+![21](Screenshots/Busqueda_21.jpg)
+
+
+
+
+
+
 
 
 
