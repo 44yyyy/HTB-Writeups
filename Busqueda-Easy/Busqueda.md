@@ -66,6 +66,20 @@ Navigating to the home directory for this user, we can get the user flag. Nice!
 
 ## Root Flag
 
+Let's dig around this machine more. I was interested in the directory the shell dropped us in: ```/var/www/app```. Running ```ls -la```, we see that there is a hidden ```.git``` directory, indicating a git repository. Let's look into it.
+
+![8](Screenshots/Busqueda_8.jpg)
+
+Running ```ls -la``` again in the ```.git``` directory immediately gets us some interesting results. One that catches my eye is the ```config``` file, which looks promising for valuable information.
+
+![9](Screenshots/Busqueda_9.jpg)
+
+Looking into the contents of the ```config``` file, two things stand out. A set of credentials are revealed, and a new subdomain: ```gitea.searcher.htb```, which we should immediately add to ```/etc/hosts```.
+
+![10](Screenshots/Busqueda_10.jpg)
+
+
+
 
 
 
