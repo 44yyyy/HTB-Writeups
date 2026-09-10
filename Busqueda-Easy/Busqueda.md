@@ -1,8 +1,8 @@
 # Busqueda - Easy
 
-## User Flag
-
 Target IP: **10.129.61.28**
+
+## User Flag
 
 Let's first start with a basic Nmap scan to get to know what ports are open on the target machine: 
 ```
