@@ -1,8 +1,8 @@
 # Sau - Easy
 
-## User Flag
-
 Target IP: **10.129.61.50**
+
+## User Flag
 
 We always get our initial Nmap scans in to get a broad idea of the target we're dealing with: ```sudo nmap --open 10.129.61.50 -vvv```
 
