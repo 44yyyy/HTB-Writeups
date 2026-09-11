@@ -57,7 +57,7 @@ Navigating to the webpage, we are greeted with a login form.
 
 ![1](Screenshots/Broker_1.jpg)
 
-Throwing some pebbles at it, let's try ```admin:admin```. It worked - wow.
+Let's throw some pebbles at it. Go ```admin:admin```! It worked - wow.
 
 After logging in we are lead to this an Apache ActiveMQ page. I'm unfamiliar with this application, but apparently it is an open-source message broker written in Java. A message broker is an "intermediary software module that translates, routes, and manages data flow between different applications and services."
 
