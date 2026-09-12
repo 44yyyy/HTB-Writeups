@@ -359,7 +359,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 I have a feeling we are not looking in the right place. I know there is a cron job running the mysql binary, but it is not writable to us, nor can we read the cron jobs for the ```root``` user.
 
-Let's take a step back. Checking the SUID bit binaries again, there is an interesting binary that I have never seen before. The ```enlightenment``` binaries seem interest. Let's look them up.
+Let's take a step back. Checking the SUID bit binaries again, there is an interesting binary that I have never seen before. The ```enlightenment``` binaries seem interesting. Let's look them up.
 
 Apparently, the ```enlightment_sys``` binary is vulnerable to CVE-2022-37706, a local privilege escalation flaw due to the binary being SUID root.
 
