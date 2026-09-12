@@ -177,7 +177,7 @@ Saving the change, we get this error saying that the reverse shell code holds dy
 
 I can feel myself getting into a rabbit hole, so let's pivot. Looking for public vulnerabilities for Dolibarr 17.0.0, I found CVE-2023-30253, an authenticated RCE vulnerability.
 
-Apparently, we can inject php code by simply typing “<?PHP code…?>” instead of “<?php code..?>”. That's curious. I did find a PoC, but I want to try manually exploiting this. Our previous reverse shell code showed an error, but we might be able to bypass it using this strategy.
+Apparently, we can inject php code by simply typing ```<?PHP code…?>``` instead of ```<?php code..?>```. That's curious. I did find a PoC, but I want to try manually exploiting this. Our previous reverse shell code showed an error, but we might be able to bypass it using this strategy.
 
 Our cheeky edit has been added.
 
