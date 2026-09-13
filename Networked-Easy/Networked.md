@@ -349,7 +349,7 @@ if ($i < 4 && $i > 1) {
 </html>
 ```
 
-We can form a valid POST request uploading a file to the remote machine by bypassing all the filters, we might be able to get access.
+If we form a POST request that uploads reverse shell code by bypassing all the filters, we might be able to get access.
 
 A prerequisite to that is to take a close look at the source code, particularly ```upload.php``` and ```lib.php``` to understand the filtering that is happening.
 
