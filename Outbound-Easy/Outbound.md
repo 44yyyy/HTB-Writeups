@@ -8,8 +8,6 @@ Initial scan: ```sudo nmap -sC -sV 10.129.232.158```
 
 ## Root Flag
 
-Nice pwn!
-
 ## Contact
 
 Email: <johnyang4406@gmail.com>, <john_s_yang@brown.edu>
