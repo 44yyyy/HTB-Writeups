@@ -312,7 +312,7 @@ lrwxrwxrwx  1 nagios   nagios   14 Sep 24 17:17 phpmailer.log -> /root/root.txt
 
 We can now run the script with sudo: ```nagios@monitored:~$ sudo /usr/local/nagiosxi/scripts/components/getprofile.sh 1```
 
-Navigate to the directory and unzip the ```.zip`` archive for the profile.
+Navigate to the directory and unzip the ```.zip``` archive for the profile,
 
 ```
 nagios@monitored:/usr/local/nagiosxi/var/components$ ls -la
