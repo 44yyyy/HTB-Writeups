@@ -1,4 +1,4 @@
-<img width="2880" height="840" alt="image" src="https://github.com/user-attachments/assets/9e35075e-2980-4423-ac8f-bca9438cdbe3" /># Poison - Medium
+# Poison - Medium
 
 Target IP: **10.129.1.254**
 
