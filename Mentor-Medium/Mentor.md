@@ -184,7 +184,7 @@ Visiting ```/admin```, ```/users```, and ```/quotes``` tells us that we are miss
 
 ![5](Screenshots/M_5.jpg)
 
-Looking back at the API docs, we can sign up at ```/auth/signup``` and log in at ```/auth/login```.
+Looking back at the API docs, we can send a POST request to sign up for an account at ```/auth/signup``` and log in at ```/auth/login```.
 
 Let's doing that.
 
