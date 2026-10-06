@@ -8,7 +8,8 @@ We always get our initial Nmap scans in to get a broad idea of the target we're 
 
 The output shows ports 22 (SSH) and 55555 (unknown) open. The non-standard port 55555 is definitely interesting.
 
-```Starting Nmap 7.95 ( https://nmap.org ) at 2026-09-09 19:45 EDT
+```
+Starting Nmap 7.95 ( https://nmap.org ) at 2026-09-09 19:45 EDT
 Initiating Ping Scan at 19:45
 Scanning 10.129.61.50 [4 ports]
 Completed Ping Scan at 19:45, 0.03s elapsed (1 total hosts)
