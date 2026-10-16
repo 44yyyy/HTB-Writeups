@@ -195,6 +195,51 @@ whoami
 nt authority\system
 ```
 
+I expected to just be able to get the flag here but there is more work to do. ```hm.txt``` has an alternate data stream, which is ```root.txt```.
+
+```
+C:\Users\Administrator\Desktop>dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 71A1-6FA1
+
+ Directory of C:\Users\Administrator\Desktop
+
+11/08/2017  10:05 AM    <DIR>          .
+11/08/2017  10:05 AM    <DIR>          ..
+12/24/2017  03:51 AM                36 hm.txt
+11/08/2017  10:05 AM               797 Windows 10 Update Assistant.lnk
+               2 File(s)            833 bytes
+               2 Dir(s)   2,650,046,464 bytes free
+
+C:\Users\Administrator\Desktop>type hm.txt
+type hm.txt
+The flag is elsewhere.  Look deeper.
+C:\Users\Administrator\Desktop>dir /R
+dir /R
+ Volume in drive C has no label.
+ Volume Serial Number is 71A1-6FA1
+
+ Directory of C:\Users\Administrator\Desktop
+
+11/08/2017  10:05 AM    <DIR>          .
+11/08/2017  10:05 AM    <DIR>          ..
+12/24/2017  03:51 AM                36 hm.txt
+                                    34 hm.txt:root.txt:$DATA
+11/08/2017  10:05 AM               797 Windows 10 Update Assistant.lnk
+               2 File(s)            833 bytes
+               2 Dir(s)   2,650,046,464 bytes free
+```
+
+We can read the alternative data stream with ```more```.
+
+```
+C:\Users\Administrator\Desktop>more < hm.txt:root.txt
+
+more < hm.txt:root.txt
+***************************
+```
+
 Nice pwn!
 
 ## Contact
