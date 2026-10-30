@@ -4,6 +4,18 @@ Target IP: **10.129.93.155**
 
 ## User Flag
 
+Initial scan: ```sudo nmap -sC -sV -p- 10.129.93.155 -v```
+
+Output shows port 2000 and 5060 open, pretty unusual ports.
+
+```
+Host is up (0.025s latency).
+Not shown: 61228 filtered tcp ports (no-response), 4305 filtered tcp ports (net-unreach)
+PORT     STATE SERVICE     VERSION
+2000/tcp open  cisco-sccp?
+5060/tcp open  sip?
+```
+
 ## Root Flag
 
 ## Contact
